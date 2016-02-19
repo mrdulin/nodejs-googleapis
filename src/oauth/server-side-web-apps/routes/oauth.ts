@@ -99,7 +99,6 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
       .get("oauth_clients")
       .find({ email: (req as any).user.email })
       .value();
-    console.log("googleAccount: ", googleAccount);
 
     let newTokens;
     try {
@@ -110,14 +109,16 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
         .find({ email: (req as any).user.email })
         .assign({ access_token: newTokens.access_token, id_token: newTokens.id_token });
     } catch (error) {
-      if (error.errro_description === "Token has been expired or revoked") {
+      const err = error.error;
+      console.log("err: ", err);
+      if (err.error_description === "Token has been expired or revoked." && err.error === "invalid_grant") {
         lowdb
           .get("oauth_clients")
           .remove({ email: (req as any).user.email })
           .write();
         return res.redirect("/");
       }
-      next(error);
+      next(err);
     }
 
     try {
@@ -157,7 +158,16 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
       console.log("token info: ", tokenInfo);
       res.redirect("/");
     } catch (error) {
+      const err = error.response.data;
       console.error("get token info failed.");
+      console.error(err);
+      if (err && err.error === "invalid_token" && err.error_description === "Invalid Value") {
+        lowdb
+          .get("oauth_clients")
+          .remove({ email: (req as any).user.email })
+          .write();
+        return res.redirect("/");
+      }
       next(error);
     }
   });
@@ -208,6 +218,7 @@ async function refreshAccessToken(refreshToken: string) {
   };
   return request(options).catch((error) => {
     console.error("refresh access token failed.");
+    console.log(error.error);
     return Promise.reject(error);
   });
 }
