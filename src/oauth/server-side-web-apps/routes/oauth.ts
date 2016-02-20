@@ -110,6 +110,13 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
         .find({ email: (req as any).user.email })
         .assign({ access_token: newTokens.access_token, id_token: newTokens.id_token });
     } catch (error) {
+      if (error.errro_description === "Token has been expired or revoked") {
+        lowdb
+          .get("oauth_clients")
+          .remove({ email: (req as any).user.email })
+          .write();
+        return res.redirect("/");
+      }
       next(error);
     }
 
@@ -127,6 +134,19 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
     }
   });
 
+  // { expiry_date: 1554023897790,
+  //   scopes:
+  //    [ 'openid',
+  //      'https://www.googleapis.com/auth/userinfo.profile',
+  //      'https://www.googleapis.com/auth/userinfo.email',
+  //      'https://www.googleapis.com/auth/adwords' ],
+  //   azp: '16536262744-7ob1su0o1hn4t79482e41mirhc102mvh.apps.googleusercontent.com',
+  //   aud: '16536262744-7ob1su0o1hn4t79482e41mirhc102mvh.apps.googleusercontent.com',
+  //   sub: '104760625496851302622',
+  //   exp: '1554023897',
+  //   email: 'novaline.dulin@gmail.com',
+  //   email_verified: 'true',
+  //   access_type: 'offline' }
   router.get("/token-info", async (req, res, next) => {
     const googleAccount: any = lowdb
       .get("oauth_clients")
