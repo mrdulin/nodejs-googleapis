@@ -18,23 +18,12 @@ function createServer(opts: IServerOpts) {
   app.set("views", path.resolve(__dirname, "./views"));
 
   app.use("/public", express.static(path.resolve(__dirname, "./public")));
-  app.use(oauth(oauth2Client));
+  // app.use(oauth(oauth2Client));
   app.use(routes({ oauth2Client }));
 
   return app.listen(PORT, () => {
     console.log(`server is listening on http://localhost:${PORT}`);
   });
-}
-
-function oauth(oauth2Client: OAuth2Client) {
-  return function requestHandler(req: Request, res: Response, next: NextFunction) {
-    // TODO: findTokensByUserId
-    const tokens = lowdb.get("oauth_clients[0]").value();
-    if (tokens) {
-      oauth2Client.setCredentials(tokens);
-    }
-    next();
-  };
 }
 
 export { createServer, IServerOpts };

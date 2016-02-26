@@ -19,45 +19,42 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
     let tokens;
     try {
       tokens = (await oauth2Client.getToken(authorizationCode)).tokens;
-      console.log("tokens: ", tokens);
-    } catch (error) {
-      const errorMessage = "oauth2Client get token failed.";
-      console.error(errorMessage);
-      console.error(error);
-      return next(errorMessage);
-    }
 
-    oauth2Client.setCredentials(tokens);
+      console.log(
+        `original tokens expiry date: ${tokens.expiry_date},${new Date(tokens.expiry_date as number).toLocaleString()}`,
+      );
+      if (tokens.expiry_date) {
+        // For testing token expire
+        const expiryDate = moment(new Date(tokens.expiry_date))
+          .subtract(59, "m")
+          .subtract(50, "s")
+          .toDate()
+          .getTime();
+
+        console.log(`test expiry date: ${expiryDate}, ${new Date(expiryDate).toLocaleString()}`);
+
+        tokens.expiry_date = expiryDate;
+      }
+
+      oauth2Client.setCredentials(tokens);
+    } catch (error) {
+      console.error("oauth2Client get token failed.");
+      return next(error);
+    }
 
     let userInfo;
     try {
       userInfo = await OAuth2Service.getUserInfo();
       console.log("userInfo: ", userInfo);
     } catch (error) {
-      const errorMessage = "OAuth2Service get user info failed.";
-      console.error(errorMessage);
-      console.error(error);
-      return next(errorMessage);
-    }
-
-    if (tokens.expiry_date) {
-      // For testing token expire
-      const expiryDate = moment(new Date(tokens.expiry_date))
-        .subtract(59, "m")
-        .subtract(50, "s")
-        .toDate()
-        .getTime();
-
-      console.log("expiryDate: ", new Date(expiryDate).toLocaleString());
-
-      tokens.expiry_date = expiryDate;
+      console.error("OAuth2Service get user info failed.");
+      return next(error);
     }
 
     lowdb
       .get("oauth_clients")
       .push({ ...tokens, ...userInfo })
       .write();
-    req.app.locals.userInfo = userInfo;
 
     res.redirect("/");
   });
@@ -71,17 +68,52 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
     }
   });
 
+  router.get("/revoke-access-token", async (req, res, next) => {
+    const googleAccount: any = lowdb
+      .get("oauth_clients")
+      .find({ email: (req as any).user.email })
+      .value();
+    console.log("googleAccount: ", googleAccount);
+    try {
+      await oauth2Client.revokeToken(googleAccount.access_token);
+      console.log("revoke access token successfully.");
+      lowdb
+        .get("oauth_clients")
+        .remove({ email: (req as any).user.email })
+        .write();
+      res.redirect("/");
+    } catch (error) {
+      console.error("revoke access token failed.");
+      next(error);
+    }
+  });
+
+  router.get("/token-info", async (req, res, next) => {
+    const googleAccount: any = lowdb
+      .get("oauth_clients")
+      .find({ email: (req as any).user.email })
+      .value();
+    try {
+      const tokenInfo = await oauth2Client.getTokenInfo(googleAccount.access_token);
+      console.log("token info: ", tokenInfo);
+      res.redirect("/");
+    } catch (error) {
+      console.error("get token info failed.");
+      next(error);
+    }
+  });
+
   router.get("/revoke", (req, res, next) => {
     oauth2Client.revokeCredentials((error, response) => {
       if (error) {
-        const errorMessage = "revoke token failed.";
-        console.error(errorMessage);
-        console.error(error);
-        return next(errorMessage);
+        console.error("revoke token failed.");
+        return next(error);
       }
       console.log("revoke token successfully");
-      lowdb.set("oauth_clients", []).write();
-      req.app.locals.userInfo = null;
+      lowdb
+        .get("oauth_clients")
+        .remove({ email: (req as any).user.email })
+        .write();
       res.redirect("/");
     });
   });

@@ -12,6 +12,7 @@
     <p><%= userInfo.name %></p>
     <image src="<%= userInfo.picture %>"/>
     <a href="/api/oauth/revoke">sign out</a>
+    <a href="/api/oauth/revoke-access-token">revoke access token</a>
     <% } else { %>
     <a href="<%= authUrl %>">sign in</a>
     <% } %>
