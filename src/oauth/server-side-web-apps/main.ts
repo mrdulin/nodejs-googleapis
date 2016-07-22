@@ -1,7 +1,7 @@
 import { createServer } from "./server";
 
-import { config } from "../config";
-import { credentials } from "../credentials";
+import { config } from "../../config";
+import { credentials } from "../../credentials";
 import { authenticate } from "./auth";
 
 async function main() {

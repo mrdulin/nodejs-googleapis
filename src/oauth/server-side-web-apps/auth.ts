@@ -2,7 +2,7 @@ import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import opn from "opn";
 
-import { credentials } from "../credentials";
+import { credentials } from "../../credentials";
 
 async function authenticate(scopes: string[] | string) {
   const oauth2Client: OAuth2Client = new google.auth.OAuth2(

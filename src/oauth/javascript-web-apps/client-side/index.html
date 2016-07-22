@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>client</title>
+  </head>
+  <body>
+    <button id="auth" type="button">sign in</button>
+
+    <script>
+      const config = {
+        API_ENDPOINT: 'http://localhost:3000'
+      };
+
+      const Url = {
+        removeQuery() {
+          const newURL = location.href.split('?')[0];
+          window.history.pushState('object', document.title, newURL);
+        },
+
+        parseQuery() {
+          return window.location.search
+            .substr(1)
+            .split('&')
+            .reduce((pre, cur) => {
+              const [key, value] = cur.split('=');
+              pre[key] = value;
+              return pre;
+            }, {});
+        }
+      };
+    </script>
+
+    <script>
+      const AuthService = {
+        getAuthInfo() {
+          return fetch(`${config.API_ENDPOINT}/oauth/info`)
+            .then(response => response.json())
+            .then(json => {
+              if (json.success) {
+                return `${json.data.authUrl}${encodeURIComponent(window.location.origin)}`;
+              }
+              return Promise.reject('sign in failed.');
+            });
+        },
+
+        authCallback(code, redirectUrl) {
+          return fetch(`${config.API_ENDPOINT}/oauth/callback?code=${code}&redirect_uri=${redirectUrl}`)
+            .then(response => response.json())
+            .then(json => {
+              if (json.success) {
+                Auth.isSignIn = true;
+                Url.removeQuery();
+                View.setSignInStatus();
+              }
+            });
+        },
+
+        revoke() {
+          return fetch(`${config.API_ENDPOINT}/oauth/revoke`)
+            .then(response => response.json())
+            .then(json => {
+              if (!json.success) {
+                return Promise.reject('revoke failed.');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              return Promise.reject('revoke failed.');
+            });
+        }
+      };
+    </script>
+    <script>
+      const Auth = {
+        isSignIn: false,
+        signIn() {
+          return AuthService.getAuthInfo()
+            .then(Auth.redirect)
+            .catch(error => View.alert(error.message));
+        },
+
+        redirect(url) {
+          window.location.href = url;
+        },
+
+        guard() {
+          const query = Url.parseQuery();
+          if (query.code) {
+            AuthService.authCallback(query.code, encodeURIComponent(window.location.origin)).catch(error => {
+              console.log(error);
+              View.alert('sign in failed.');
+            });
+          }
+        },
+
+        signOut() {
+          AuthService.revoke()
+            .then(() => {
+              Auth.isSignIn = false;
+              View.setSignInStatus();
+            })
+            .catch(error => {
+              View.alert(error.message);
+            });
+        }
+      };
+    </script>
+    <script>
+      const View = {
+        dom: {
+          authButton: null
+        },
+        bindEvent() {
+          View.dom.authButton = document.getElementById('auth');
+          View.dom.authButton.addEventListener('click', View.handleAuthClick, false);
+        },
+
+        setSignInStatus() {
+          if (Auth.isSignIn) {
+            View.dom.authButton.textContent = 'sign out';
+          } else {
+            View.dom.authButton.textContent = 'sign in';
+          }
+        },
+
+        handleAuthClick() {
+          if (Auth.isSignIn) {
+            Auth.signOut();
+          } else {
+            Auth.signIn();
+          }
+        },
+
+        alert(message) {
+          window.alert(message);
+        }
+      };
+    </script>
+    <script>
+      window.onload = function onload() {
+        Auth.guard();
+        View.bindEvent();
+        View.setSignInStatus();
+      };
+    </script>
+  </body>
+</html>
