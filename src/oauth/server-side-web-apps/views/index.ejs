@@ -8,8 +8,9 @@
   </head>
   <body>
     <h1>home page</h1>
-    <% if(displayName) { %>
-    <p><%= displayName%></p>
+    <% if(userInfo) { %>
+    <p><%= userInfo.name %></p>
+    <image src="<%= userInfo.picture %>"/>
     <a href="/api/oauth/revoke">sign out</a>
     <% } else { %>
     <a href="<%= authUrl %>">sign in</a>

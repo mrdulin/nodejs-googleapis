@@ -1,8 +1,8 @@
-import { Application, Router } from "express";
+import { Router } from "express";
 import { OAuth2Client } from "google-auth-library";
 import { lowdb } from "../database";
 
-import { PlusService } from "../services";
+import { OAuth2Service, PlusService } from "../services";
 
 function oauth(opts: { oauth2Client: OAuth2Client }) {
   const router = Router();
@@ -13,14 +13,14 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
 
     const { tokens } = await oauth2Client.getToken(authorizationCode);
 
+    oauth2Client.setCredentials(tokens);
+    const data = await OAuth2Service.getUserInfo();
+
     lowdb
       .get("oauth_clients")
-      .push({ ...tokens })
+      .push({ ...tokens, ...data })
       .write();
-
-    oauth2Client.setCredentials(tokens);
-    const data = await PlusService.getUser("me");
-    req.app.locals.plusUserInfo = data;
+    req.app.locals.userInfo = data;
     res.redirect("/");
   });
 
@@ -35,6 +35,7 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
       }
       console.log("revoke token successfully");
       lowdb.set("oauth_clients", []).write();
+      req.app.locals.userInfo = null;
       res.redirect("/");
     });
   });

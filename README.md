@@ -5,6 +5,7 @@ Node.js googleapis samples
 ## references
 
 - https://developers.google.com/drive/api/v3/quickstart/nodejs
+- https://myaccount.google.com/permissions
 
 ## TODO
 

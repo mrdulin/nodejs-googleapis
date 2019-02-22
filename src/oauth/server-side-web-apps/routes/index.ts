@@ -8,11 +8,11 @@ function routes(opts: { oauth2Client: OAuth2Client }) {
   const router = Router();
 
   router.get("/", async (req, res) => {
-    let displayName;
-    if (req.app.locals.plusUserInfo) {
-      displayName = req.app.locals.plusUserInfo.displayName;
+    let userInfo;
+    if (req.app.locals.userInfo) {
+      userInfo = req.app.locals.userInfo;
     }
-    res.render("index", { authUrl, displayName });
+    res.render("index", { authUrl, userInfo });
   });
 
   router.get("/error", (req, res) => {
