@@ -3,6 +3,7 @@ import { OAuth2Client } from "google-auth-library";
 import { authUrl } from "../googleOAuth2";
 
 import { oauth } from "./oauth";
+import { plus } from "./plus";
 
 function routes(opts: { oauth2Client: OAuth2Client }) {
   const router = Router();
@@ -20,6 +21,7 @@ function routes(opts: { oauth2Client: OAuth2Client }) {
   });
 
   router.use("/api/oauth", oauth(opts));
+  router.use("/api/plus", plus());
 
   return router;
 }

@@ -24,6 +24,7 @@
     "google-auth-library": "^3.1.0",
     "googleapis": "^37.2.0",
     "lowdb": "^1.0.0",
+    "moment": "^2.24.0",
     "opn": "^5.4.0",
     "query-string": "^6.2.0"
   },
