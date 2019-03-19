@@ -1,4 +1,4 @@
-import { Application, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import { OAuth2Client } from "google-auth-library";
 import { authUrl } from "../googleOAuth2";
 
@@ -16,12 +16,14 @@ function routes(opts: { oauth2Client: OAuth2Client }) {
     res.render("index", { authUrl, userInfo });
   });
 
-  router.get("/error", (req, res) => {
-    res.render("error", { error: res.locals.errorMessage });
-  });
-
   router.use("/api/oauth", oauth(opts));
   router.use("/api/plus", plus());
+
+  router.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error(error);
+    res.status(500);
+    res.render("error", { error: error.message || error });
+  });
 
   return router;
 }

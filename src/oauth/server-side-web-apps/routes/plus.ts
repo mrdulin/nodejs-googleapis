@@ -4,11 +4,16 @@ import { PlusService } from "../services";
 function plus() {
   const router = Router();
 
-  router.get("/:userId", async (req, res) => {
+  router.get("/:userId", async (req, res, next) => {
     const { userId } = req.params;
-    const data = await PlusService.getUser(userId);
-    res.json(data);
+    try {
+      const data = await PlusService.getUser(userId);
+      res.json(data);
+    } catch (error) {
+      next(error);
+    }
   });
+
   return router;
 }
 
