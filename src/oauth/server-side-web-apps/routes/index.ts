@@ -8,6 +8,15 @@ import { plus } from "./plus";
 
 function routes(opts: { oauth2Client: OAuth2Client }) {
   const router = Router();
+  const { oauth2Client } = opts;
+
+  oauth2Client.on("tokens", (tokens) => {
+    if (tokens.refresh_token) {
+      // store the refresh_token in my database!
+      console.log("tokens.refresh_token: ", tokens.refresh_token);
+    }
+    console.log("tokens.access_token: ", tokens.access_token);
+  });
 
   router.use(function jwtAuth(req: Request, res, next) {
     (req as any).user = { email: "novaline.dulin@gmail.com" };

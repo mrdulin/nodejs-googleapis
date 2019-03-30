@@ -74,7 +74,11 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
       .find({ email: (req as any).user.email })
       .value();
     console.log("googleAccount: ", googleAccount);
+
+    // oauth2Client.setCredentials({ refresh_token: googleAccount.refresh_token });
+
     try {
+      const accessToken = googleAccount.access_token + "make invalid"; // Error: invalid_token
       await oauth2Client.revokeToken(googleAccount.access_token);
       console.log("revoke access token successfully.");
       lowdb
