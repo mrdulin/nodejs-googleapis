@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { OAuth2Client } from "google-auth-library";
 import moment from "moment";
-import { lowdb } from "../database";
+import request, { Options } from "request-promise";
 
+import { credentials } from "../../../credentials";
+import { lowdb } from "../database";
 import { OAuth2Service } from "../services";
 
 function oauth(opts: { oauth2Client: OAuth2Client }) {
@@ -92,6 +94,39 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
     }
   });
 
+  router.get("/v2/revoke-access-token", async (req, res, next) => {
+    const googleAccount: any = lowdb
+      .get("oauth_clients")
+      .find({ email: (req as any).user.email })
+      .value();
+    console.log("googleAccount: ", googleAccount);
+
+    let newTokens;
+    try {
+      newTokens = await refreshAccessToken(googleAccount.refresh_token);
+      console.log("new access token: ", newTokens);
+      lowdb
+        .get("oauth_clients")
+        .find({ email: (req as any).user.email })
+        .assign({ access_token: newTokens.access_token, id_token: newTokens.id_token });
+    } catch (error) {
+      next(error);
+    }
+
+    try {
+      await oauth2Client.revokeToken(newTokens.access_token);
+      console.log("revoke access token successfully.");
+      lowdb
+        .get("oauth_clients")
+        .remove({ email: (req as any).user.email })
+        .write();
+      res.redirect("/");
+    } catch (error) {
+      console.error("revoke access token failed.");
+      next(error);
+    }
+  });
+
   router.get("/token-info", async (req, res, next) => {
     const googleAccount: any = lowdb
       .get("oauth_clients")
@@ -103,6 +138,20 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
       res.redirect("/");
     } catch (error) {
       console.error("get token info failed.");
+      next(error);
+    }
+  });
+
+  router.get("/refresh-token", async (req, res, next) => {
+    const googleAccount: any = lowdb
+      .get("oauth_clients")
+      .find({ email: (req as any).user.email })
+      .value();
+    try {
+      const tokens = await refreshAccessToken(googleAccount.refresh_token);
+      console.log("new access token: ", tokens);
+      res.redirect("/");
+    } catch (error) {
       next(error);
     }
   });
@@ -123,6 +172,24 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
   });
 
   return router;
+}
+
+async function refreshAccessToken(refreshToken: string) {
+  const options: Options = {
+    uri: "https://www.googleapis.com/oauth2/v4/token",
+    method: "POST",
+    body: {
+      client_id: credentials.CLIENT_ID,
+      client_secret: credentials.CLIENT_SECRET,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    },
+    json: true,
+  };
+  return request(options).catch((error) => {
+    console.error("refresh access token failed.");
+    return Promise.reject(error);
+  });
 }
 
 export { oauth };

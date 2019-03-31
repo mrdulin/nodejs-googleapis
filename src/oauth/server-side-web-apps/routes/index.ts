@@ -20,6 +20,19 @@ function routes(opts: { oauth2Client: OAuth2Client }) {
 
   router.use(function jwtAuth(req: Request, res, next) {
     (req as any).user = { email: "novaline.dulin@gmail.com" };
+    const googleAccount: any = lowdb
+      .get("oauth_clients")
+      .find({ email: (req as any).user.email })
+      .value();
+    if (googleAccount) {
+      oauth2Client.setCredentials({
+        refresh_token: googleAccount.refresh_token,
+        access_token: googleAccount.access_token,
+        token_type: googleAccount.token_type,
+        expiry_date: googleAccount.expiry_date,
+        id_token: googleAccount.id_token,
+      });
+    }
     next();
   });
 

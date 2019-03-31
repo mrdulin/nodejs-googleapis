@@ -1,0 +1,12 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "verbose": true,
+  "ignore": ["src/__tests__/**/*.spec.ts", "node_modules", ".git"],
+  "execMap": {
+    "ts": "ts-node"
+  }
+}

@@ -26,7 +26,9 @@
     "lowdb": "^1.0.0",
     "moment": "^2.24.0",
     "opn": "^5.4.0",
-    "query-string": "^6.2.0"
+    "query-string": "^6.2.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.4",
@@ -37,7 +39,10 @@
     "@types/node": "^11.9.4",
     "@types/opn": "^5.1.0",
     "@types/query-string": "^6.2.0",
+    "@types/request": "^2.48.1",
+    "@types/request-promise": "^4.1.42",
     "dotenv": "^6.2.0",
+    "nodemon": "^1.18.10",
     "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3"
