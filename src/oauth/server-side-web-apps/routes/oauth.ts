@@ -161,6 +161,8 @@ function oauth(opts: { oauth2Client: OAuth2Client }) {
       const err = error.response.data;
       console.error("get token info failed.");
       console.error(err);
+      // token expired or token has been revoked.
+      // { error: 'invalid_token', error_description: 'Invalid Value' }
       if (err && err.error === "invalid_token" && err.error_description === "Invalid Value") {
         lowdb
           .get("oauth_clients")
